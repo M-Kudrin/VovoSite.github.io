@@ -1,0 +1,7 @@
+{
+  "name": "lr",
+  "short_name": "lr",
+  "description": "desc",
+  "start_url": "/",
+  "display": "standalone"
+}

@@ -1,0 +1,881 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, initial-scale=1, user-scalable=yes">
+
+    <title>lr</title>
+    <meta name="description" content="desc">
+
+    <!-- See https://goo.gl/OOhYW5 -->
+    <link rel="manifest" href="/manifest.json">
+
+    <script src="/bower_components/webcomponentsjs/webcomponents-loader.js"></script>
+    <!--<link rel="import" href="bower_components/paper-elements/paper-elements.html"> -->
+	<link rel="import" href="bower_components/paper-button/paper-button.html">
+	<link rel="import" href="bower_components/paper-checkbox/paper-checkbox.html">
+	<link rel="import" href="bower_components/paper-input/paper-input.html">
+	<link rel="import" href="bower_components/paper-dialog/paper-dialog.html">
+    <link rel="import" href="bower_components/platinum-sw/platinum-sw-elements.html">
+	<link rel="import" href="bower_components/paper-styles/paper-styles.html">
+	<link rel="import" href="bower_components/paper-fab/paper-fab.html">
+	<link rel="import" href="bower_components/iron-icons/iron-icons.html">
+	
+
+	<script src="https://www.gstatic.com/firebasejs/5.0.2/firebase.js"></script>
+	
+	
+	<style>
+	body {
+	margin: 0px;
+	}
+	<!--.add {
+	position: absolute:
+	top: 110px;
+	right: 50px;
+	<!--background-color: var(--paper-blue-900);-->
+	<!--}-->
+	
+
+	
+	
+	.newInput {
+	 width: 160px;
+	}
+	
+	
+	
+	.dialogDiv {
+	<!--background-color:orange;-->
+	background-color:white;
+	height:150px;
+	width:205px;
+	overflow-y: scroll;
+	margin-left:20px;
+	 border: 1px solid red
+	}
+	.inputDialog {
+	width: 150px;
+	}
+	paper-input {
+	width: 250px;
+	}
+	.chat {
+height: 520px;
+width:  375px;
+background: gray;
+border: 1px solid #C1C1C1;
+overflow-y: scroll;
+margin: 0px;
+<!--font-size: 30pt;-->
+font-color:blue;
+}
+
+
+.buttonPool {
+width:50px;
+height:50px;
+
+}
+
+::-webkit-scrollbar-thumb {
+    border: 1px solid red;
+    background-color: red;
+	
+}
+::-webkit-scrollbar {
+    -webkit-appearance: none;
+}
+<!--
+::-webkit-scrollbar:horizontal {
+    height: 13px;
+}
+-->
+::-webkit-scrollbar-thumb {
+    <!--border-radius: 6px;-->
+	border-radius: 1px;
+    border: 1px solid red; 
+    <!--background-color: rgba(0, 0, 0, .5);-->
+	background-color: red;
+}
+	
+	
+	
+	
+	
+	
+	
+	.labelState {
+	
+	width:60px;
+	background-color:gray;
+	border: none
+	}
+	
+     paper-checkbox {
+	 paper-checkbox-ink-size: 2px;
+	 margin-bottom: 15px;
+	 }
+	 
+	 .poolText {
+	 margin-bottom:5px;
+	 margin-left:10px;
+	 }
+<!--paper-dialog {
+width: 350px;
+	height: 350px;
+	background: white;
+
+}-->
+.textField {
+margin-left:12px;
+margin-bottom: 15px;
+}
+	paper-button {
+	width: 62px;
+	height: 35px;
+	background: blue;
+	color: #FFF;
+	}
+
+  </style>
+	
+  </head>
+  <body>
+   <platinum-sw-register auto-register skip-waiting clients-claim reload-on-install href="sw-import.js">
+    <platinum-sw-cache default-cache-strategy="networkFirst">
+    </platinum-sw-cache>
+  </platinum-sw-register>
+    
+	 
+	<div id="subscribe" class ="chat" onscroll="loadNewData()"></div>
+
+     
+	 <paper-input class="textField" id ="input-message" floatingLabel label="Текс сообщения"></paper-input>
+	<paper-button onclick="sendMessage()">Написать</paper-button>	
+	
+	<!--<paper-button class="buttonPool" onclick="createPool()"> pool</paper-button>
+	<paper-button class="buttonPool" onclick="newDataLoad()"> newDataLoad</paper-button>
+	<paper-button class="buttonPool" onclick="offlineWorkDB()"> offline</paper-button>
+	-->
+	<paper-button onclick="sendLink()">Ссылка</paper-button>
+	<paper-button onclick="dialogShow()"> Опрос</paper-button>
+	<input type = "password" id = "password" >
+    <input type = "email"	id="email" >
+	<paper-dialog id ="dialog">
+	
+  <h2 align="center">Введите данные</h2>
+  <div class="dialogDiv" id ="dialogDiv"></div>
+  <style>
+   .add {
+  
+   bottom: 50px;
+   right: 40px;
+   
+   }
+   
+   .dialogButton {
+   top: 55px;
+   }
+   </style>
+	<!--<paper-input id="newInput" ></paper-input>-->
+  <div class="buttons">
+    <paper-button dialog-dismiss on-tap="dialogView()" class="dialogButton">Отмена</paper-button>
+    <paper-button onclick="addNewPaperInput()" class="dialogButton">Добавить</paper-button>
+	<paper-button onclick="dialogView ()" class="dialogButton">Ок</paper-button>
+	<paper-button onclick="login()" class="dialogButton">войти</paper-button>
+	<!--<paper-fab icon="add" class = "add" onclick="fabButton()"></paper-fab>-->
+  </div>
+</paper-dialog>
+
+
+
+<paper-dialog id ="dialog2" style="max-height: 185px;">
+<h2 align="center">Введите имя</h2>
+	<paper-input id="newInput2" ></paper-input>
+  <div class="buttons">
+    <paper-button onclick="getUserName()">Ок</paper-button>
+  </div>
+</paper-dialog>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<script>
+	
+	
+	
+  
+	var  userName="defaultUser";
+	//var userName = prompt("Введите имя");
+	document.querySelector('#dialog2').toggle();
+	
+	function getUserName() {
+	userName = document.querySelector('#newInput2').value;
+	document.querySelector('#dialog2').close();
+	}
+	 // Initialize Firebase
+  var config = {
+    apiKey: "AIzaSyDjCv3e_EmpeeP4t8upnMhuvenYK3wzwxo",
+    authDomain: "newprogect-d44b4.firebaseapp.com",
+    databaseURL: "https://newprogect-d44b4.firebaseio.com",
+    projectId: "newprogect-d44b4",
+    storageBucket: "newprogect-d44b4.appspot.com",
+    messagingSenderId: "729368432451"
+  };
+  
+  firebase.initializeApp(config);
+  var contentSize = 0;
+var resultArray22 = [];
+  //contentSize = contentSize+20;
+  contentSize = contentSize+20;
+  firebase.database().ref('messages/').limitToLast(contentSize).once('value', function(snapshot) {
+  snapshot.forEach(function(child) {
+  
+  var childData = child.val();
+  resultArray22.push(childData);
+  });
+  // alert(resultArray22.length);
+ clearAll();
+ resultArray22 = resultArray22.reverse();
+  for(var i=0;i<resultArray22.length;i++) {
+  //alert(JSON.stringify(resultArray[i]));
+  if(resultArray22[i].type == "message") {
+  loadMoreContent(resultArray22[i].text);
+  
+  }
+  }
+  
+  });
+ 
+  
+  function login() {
+  
+  const auth = firebase.auth();
+  
+ const promise = auth.signInWithEmailAndPassword(document.getElementById("email").value, document.getElementById("password").value);
+  
+  }
+	
+	
+  var dialogArray = [];
+  function addNewPaperInput() {
+  
+  var element = document.createElement("paper-input");
+  element.className="newInput";
+document.getElementById('dialogDiv').appendChild(element);
+dialogArray.push(element);
+  }
+  
+  function dialogView() {
+  /*
+  var temptNew = document.querySelector('#newInput').value;
+	alert(temptNew);
+	document.querySelector('#dialog').close();
+	
+	for(var i =0;i<dialogArray.length;i++) {
+	alert(dialogArray[i].value);
+	}
+	dialogArray=[];
+	*/
+	
+	var namesList = [];
+var values = [];
+
+for(var i=0;i<dialogArray.length;i++) {
+namesList.push(dialogArray[i].value);
+values.push(0);
+}
+
+var msg = {
+type:"pool",
+namesList:namesList,
+values: values,
+timestamp: firebase.database.ServerValue.TIMESTAMP
+};
+  var id = firebase.database().ref('messages/').push().key;
+firebase.database().ref('messages/' +id).set(msg);
+
+document.querySelector('#dialog').close();
+
+dialogArray=[];
+	}
+  
+   
+	function dialogShow() {
+	
+	document.querySelector('#dialog').toggle();
+	var myNode = document.getElementById('dialogDiv');
+
+      while (myNode.firstChild) {
+       myNode.removeChild(myNode.firstChild);
+        }
+	document.querySelector('#newInput').value="";
+	}
+	
+	var pools = [];
+	
+	var allMessages = [];
+	var messagesKeys = [];
+	
+	function loadNewData() {
+	var scrollValue = document.getElementById("subscribe").scrollTop;
+	
+	if(scrollValue <= 0) {
+	//alert("Load content");
+	newDataLoad();
+	}
+	}
+	
+	var contentSize = 0;
+	
+	function loadMoreContent(textNode) {
+	var messageElem = document.createElement('div');
+messageElem.className="poolText";
+var textElement = document.createTextNode(textNode);
+textElement.className="text";
+messageElem.appendChild(textElement);
+	document.getElementById('subscribe').insertBefore(messageElem,
+	document.getElementById('subscribe').firstChild);
+	}
+	
+	
+	// function newDataLoad() {
+   function newDataLoad() {
+  // alert("сработал здесь");
+  var resultArray = [];
+  //contentSize = contentSize+20;
+  contentSize = contentSize+10;
+  firebase.database().ref('messages/').limitToLast(contentSize).once('value', function(snapshot) {
+  snapshot.forEach(function(child) {
+  
+  var childData = child.val();
+  resultArray.push(childData);
+  });
+  clearAll();
+ resultArray = resultArray.reverse();
+  for(var i=0;i<resultArray.length;i++) {
+  if(resultArray[i].type == "message") {
+  loadMoreContent(resultArray[i].text);
+  
+  }
+  }
+  });
+  }
+  
+  function fabButton() {
+  alert("This is Fab");
+  
+  }
+  
+	function loadNewData() {
+	var scrollValue = document.getElementById("subscribe").scrollTop;
+	
+	if(scrollValue <= 0) {
+	//alert("Load content");
+newDataLoad();
+	}
+	}
+	
+	
+	function loadMoreContent(textNode) {
+	var messageElem = document.createElement('div');
+messageElem.className="poolText";
+var textElement = document.createTextNode(textNode);
+textElement.className="text";
+messageElem.appendChild(textElement);
+	document.getElementById('subscribe').insertBefore(messageElem,
+	document.getElementById('subscribe').firstChild);
+	}
+	
+	
+	 function newDataLoad() {
+   
+  var resultArray = [];
+  //contentSize = contentSize+20;
+  contentSize = contentSize+10;
+  //var contentSize = allMessages.length+10;
+  firebase.database().ref('messages/').limitToLast(contentSize).once('value', function(snapshot) {
+  snapshot.forEach(function(child) {
+  
+  var childData = child.val();
+  resultArray.push(childData);
+  });
+  resultArray = resultArray.reverse();
+  for(var i=0;i<resultArray.length;i++) {
+  //alert(JSON.stringify(resultArray[i]));
+  if(resultArray[i].type == "message") {
+  loadMoreContent(resultArray[i].text);
+  }
+  }
+  });
+  
+  }
+	class Pool {
+
+constructor(id,nameList, values) {
+this.id =id;
+this.names = [];
+this.elements = [];
+this.elements2 = [];
+this.znachenie = [];
+for(var i1 =0;i1<values.length;i1++) {
+
+this.znachenie.push(values[i1]);
+}
+
+
+for(var i =0;i<values.length;i++) {
+
+this.names.push(nameList[i]);
+  
+  var element = document.createElement("paper-checkbox");
+  var element2 = document.createElement("input");
+  element2.type = "text";
+  element2.value = values[i];
+  element2.className="labelState";
+  this.clicked(element,element2,i,this.znachenie,this.id);
+
+this.elements.push(element);
+this.elements2.push(element2);
+
+
+var messageElem = document.createElement('div');
+messageElem.className="poolText";
+var textElement = document.createTextNode(this.names[i]);
+textElement.className="text";
+messageElem.appendChild(textElement);
+document.getElementById('subscribe').appendChild(messageElem);
+document.getElementById('subscribe').appendChild(this.elements[i]);
+document.getElementById('subscribe').appendChild(this.elements2[i]);
+
+}
+
+}
+
+
+clicked(elem,elem2, index,val,uid) {
+elem.onclick = function() { 
+    if(elem.checked) {
+   
+var resultativeArray = [];
+
+for(var k=0;k<val.length;k++) {
+if(parseFloat(k)==parseFloat(index)) {
+val[k]=val[k]+1;
+resultativeArray.push(parseFloat(val[k]));
+}
+else {
+resultativeArray.push(val[k]);
+}
+}
+
+firebase.database().ref('messages/' +uid).update({
+"values": resultativeArray
+});
+
+}
+else {
+
+var resultativeArray = [];
+for(var k=0;k<val.length;k++) {
+if(parseFloat(k)==parseFloat(index)) {
+val[k]=val[k]-1;
+resultativeArray.push(parseFloat(val[k]));
+}
+else {
+resultativeArray.push(val[k]);
+}
+}
+
+firebase.database().ref('messages/' +uid).update({
+"values": resultativeArray
+});
+
+}
+  };
+
+}
+
+
+getValue(i) {
+var t=this.elements2[i];
+return t.value;
+}
+
+setClicked() {
+
+var t = this;
+for( var i=0;i<t.elements.length;i++) {
+t.elements[i].onclick = function() {
+alert(t.getValue(i));
+
+};
+}
+}
+
+getID() {
+return this.id;
+}
+
+update(values) {
+
+for(var i =0;i<values.length;i++) {
+this.elements2[i].value = values[i];
+this.znachenie[i]= values[i];
+}
+
+}
+
+}
+var myDatabase; 
+var connectionState = firebase.database().ref(".info/connected");
+  
+  connectionState.on("value", function(snap) {
+  
+  
+  if (snap.val()) {
+  //alert("Connect");
+   //firebase.initializeApp(config);
+   clearAll();
+    
+  window.indexedDB = window.indexedDB || window.webkitIndexedDB || window.msIndexedDB;
+  
+  if(!window.indexedDB) {
+  console.log("not support");
+  }
+   var offlineDB;
+  var request = window.indexedDB.open("myDB",1);
+  
+  request.onerror = function(e) {
+  console.log("error openning "+e);
+  };
+  
+  
+  request.onupgradeneeded = function(e) {
+    console.log("update");
+	offlineDB = e.target.result;
+	var objectStore = offlineDB.createObjectStore("messages", {keyPath: 'id'});
+	
+  };
+  
+  request.onsuccess = function(e) {
+  console.log("success");
+  offlineDB = e.target.result;
+ 
+  };
+  
+
+	  
+function saveForOffline(data) {
+if(typeof offlineDB != 'undefined') {
+var transaction = offlineDB.transaction(["messages"],"readwrite");
+	  var objectStore = transaction.objectStore("messages");
+	  var request = objectStore.get(1);
+	  request.onsuccess = function(e) {
+	 //  alert(JSON.stringify(request.result.mess));
+	   request.result.mess = data;
+	   objectStore.put(request.result);
+	  };
+	  }
+}
+ 
+  
+   myDatabase = firebase.database().ref('messages/');
+
+//myDatabase.on("child_added", function(data, prevChildKey) {
+
+
+
+
+  var now = new Date().getTime();
+  var query = myDatabase.orderByChild('timestamp').startAt(now);
+
+   query.on("child_added", function(data, prevChildKey){
+  
+  var newData = data.val();
+  allMessages.push(newData);
+ // alert(newData);
+  //alert(JSON.stringify(newData));
+  messagesKeys.push(data.key);
+  saveForOffline(allMessages);
+  if(newData.type == "message") {
+  var messageElem = document.createElement('div');
+  messageElem.className="poolText";
+  var someText = document.createTextNode(newData.text);
+  someText.className="text";;
+  messageElem.appendChild(someText);
+  document.getElementById('subscribe').appendChild(messageElem);
+  }
+  
+  else if(newData.type == "pool") {
+  var id = data.key;
+var values = newData.values;
+//alert(JSON.stringify(values));
+var nameList = newData.namesList;
+
+var pooling = new Pool(id,nameList,values);
+pools.push(pooling);
+  }
+  
+  else if(newData.type == "link") {
+  //alert("здесь");
+  //alert(newData.link);
+  var messageElem = document.createElement('div');
+  messageElem.className="poolText";
+  var someText = document.createTextNode(newData.mes);
+  someText.className="text";;
+  messageElem.appendChild(someText);
+  //messageElem.appendChild(a);
+  
+  var a =document.createElement('a');
+  a.href = newData.link;
+  a.innerHTML = "link";
+  a.onclick = function(e) {
+  open(newData.link,'link');
+  return false;
+  };
+ // messageElem.appendChild(a);
+ document.getElementById('subscribe').appendChild(messageElem);
+ document.getElementById('subscribe').appendChild(a);
+  }
+  
+  
+  
+  
+  
+  //resultArray.push(data);
+  });
+  myDatabase.on("child_changed", function(data) {
+ 
+  if(data.val().type == "pool") {
+      var poolID = data.key;
+      for(var index=0;index<pools.length;index++) {
+if(pools[index].getID() == poolID) {
+pools[index].update(data.val().values);
+}
+}	  
+  }
+  
+  
+});
+  
+  }
+  else {
+  //alert("No connection firebase");
+ // alert("здесь");
+ clearAll();
+  offlineWorkDB();
+  }
+  
+  
+  
+  });
+/*
+var myDatabase = firebase.database().ref('messages/');
+
+myDatabase.on("child_added", function(data, prevChildKey) {
+  
+  var newData = data.val();
+  var messageElem = document.createElement('div');
+  messageElem.className="poolText";
+  var someText = document.createTextNode(newData.text);
+  someText.className="text";;
+  messageElem.appendChild(someText);
+  document.getElementById('subscribe').appendChild(messageElem);
+  //resultArray.push(data);
+  });
+*/
+
+
+
+
+
+  function sendMessage() {
+  
+  var date = new Date();
+  var hour = date.getHours();
+  var minute = date.getMinutes();
+  var messageText = document.querySelector('#input-message').value;
+  
+  var outgoingMessage = hour +":"+ minute+" "+userName +" : "+messageText;
+
+
+ var id = firebase.database().ref('messages/').push().key;
+firebase.database().ref('messages/' +id).set( {
+type: "message",
+text:outgoingMessage,
+timestamp: firebase.database.ServerValue.TIMESTAMP
+});  
+	  
+   
+  
+  }
+
+/*
+window.addEventListener("online", function() {
+alert("yes window");
+});
+
+window.addEventListener("offline", function() {
+alert("no window");
+});
+*/
+
+function createPool() {
+var namesList = [];
+var values = [];
+var count = prompt("Введите число пунктов");
+
+for(var i=0;i<parseFloat(count);i++) {
+var name = prompt("Введите имя "+i+"пункт");
+namesList.push(name);
+values.push(0);
+}
+
+var msg = {
+type:"pool",
+namesList:namesList,
+values: values,
+timestamp: firebase.database.ServerValue.TIMESTAMP
+};
+  var id = firebase.database().ref('messages/').push().key;
+firebase.database().ref('messages/' +id).set(msg);
+}
+
+
+ function sendLink() {
+  var link = prompt("Введите ссылку");
+  var date = new Date();
+  var hour = date.getHours();
+  var minute = date.getMinutes();
+  
+  var outgoingMessage = hour +":"+ minute+" "+userName +" : ";
+  
+ var msg = {
+type:"link",
+link: link,
+mes:outgoingMessage,
+timestamp: firebase.database.ServerValue.TIMESTAMP
+};
+  var id = firebase.database().ref('messages/').push().key;
+firebase.database().ref('messages/' +id).set(msg);
+ 
+ }
+
+
+
+function clearAll() {
+var myNode = document.getElementById('subscribe');
+
+while (myNode.firstChild) {
+myNode.removeChild(myNode.firstChild);
+}
+}
+	function offlineWorkDB() {
+	window.indexedDB = window.indexedDB || window.webkitIndexedDB || window.msIndexedDB;
+  
+  if(!window.indexedDB) {
+  console.log("not support");
+  }
+   var offlineDB;
+  var request = window.indexedDB.open("myDB",1);
+  
+  request.onerror = function(e) {
+  console.log("error openning "+e);
+  };
+  
+  
+  request.onupgradeneeded = function(e) {
+    console.log("update");
+	offlineDB = e.target.result;
+	var objectStore = offlineDB.createObjectStore("messages", {keyPath: 'id'});
+	
+  };
+  
+  request.onsuccess = function(e) {
+  console.log("success");
+  offlineDB = e.target.result;
+  var offlineData;
+	var request = offlineDB.transaction(["messages"],"readwrite").objectStore("messages").get(1);
+	  request.onsuccess = function(e) {
+	   offlineData = request.result.mess;
+	   //alert("Здесь");
+	     for(var i=0;i<offlineData.length;i++) {
+	  if(offlineData[i].type == "message") {
+  var messageElem = document.createElement('div');
+  messageElem.className="poolText";
+  var someText = document.createTextNode(offlineData[i].text);
+  someText.className="text";;
+  messageElem.appendChild(someText);
+  document.getElementById('subscribe').appendChild(messageElem);
+  }
+  
+  else if(offlineData[i].type == "pool") {
+  var id = Math.random();
+  //alert(JSON.stringify(offlineData[i]));
+  //alert(JSON.stringify(offlineData[i].values));
+var values = offlineData[i].values;
+var nameList = offlineData[i].namesList;
+
+var pooling = new Pool(id,nameList,values);
+
+}
+  else if(offlineData[i].type == "link") {
+  var messageElem = document.createElement('div');
+  messageElem.className="poolText";
+  var someText = document.createTextNode(offlineData[i].mes);
+  someText.className="text";;
+  messageElem.appendChild(someText);
+  var a =document.createElement('a');
+  a.href = offlineData[i].link;
+  a.innerHTML = "link";
+  a.onclick = function(e) {
+  window.open(newData.link,'link');
+  return false;
+  };
+ document.getElementById('subscribe').appendChild(messageElem);
+ document.getElementById('subscribe').appendChild(a);
+   }
+  }
+	  };
+	  
+	
+  
+  
+  };
+	
+	  
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ // alert("here "+window.navigator.onLine);
+	</script>
+  </body>
+</html>
